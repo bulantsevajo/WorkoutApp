@@ -1,5 +1,6 @@
 package com.example.workoutapp
 
+import android.widget.NumberPicker
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,28 +17,35 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewExercise(navController: NavController) {
-    // State for the text field
     var exerciseName by remember { mutableStateOf(TextFieldValue("")) }
-    // State for the switch
     var isTimerEnabled by remember { mutableStateOf(false) }
-    // State for the selected color
+    var selectedTime by remember { mutableStateOf(30) }
     var selectedColor by remember { mutableStateOf(Color.Transparent) }
+    var showTimePicker by remember { mutableStateOf(false) } // для отображения диалога выбора времени
+    var selectedMinutes by remember { mutableStateOf(0) }
+    var selectedSeconds by remember { mutableStateOf(0) }
+    val bottomSheetState = rememberModalBottomSheetState()
+    val coroutineScope = rememberCoroutineScope()
+    val totalTimeInSeconds = selectedMinutes * 60 + selectedSeconds
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Top bar with back and done buttons
         TopAppBar(
             title = { Text("Exercise") },
             navigationIcon = {
@@ -54,7 +62,6 @@ fun NewExercise(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Exercise name input
         BasicTextField(
             value = exerciseName,
             onValueChange = { exerciseName = it },
@@ -67,7 +74,6 @@ fun NewExercise(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Timer switch
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -83,9 +89,24 @@ fun NewExercise(navController: NavController) {
             )
         }
 
+        if (isTimerEnabled) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFF5F5F5))
+                    .clickable { showTimePicker = true }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Time", fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.weight(1f))
+                Text("%02d:%02d".format(selectedMinutes, selectedSeconds), modifier = Modifier.padding(top = 16.dp))
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Exercise repeats
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -101,7 +122,6 @@ fun NewExercise(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Exercise color selection
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -130,7 +150,62 @@ fun NewExercise(navController: NavController) {
             }
         }
     }
+    
+    if (showTimePicker) {
+        ModalBottomSheet(onDismissRequest = { showTimePicker = false }) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AndroidView(factory = { context ->
+                        NumberPicker(context).apply {
+                            minValue = 0
+                            maxValue = 59
+                            value = selectedMinutes
+                            setOnValueChangedListener { _, _, newVal ->
+                                selectedMinutes = newVal
+                            }
+                        }
+                    })
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Min")
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AndroidView(factory = { context ->
+                        NumberPicker(context).apply {
+                            minValue = 0
+                            maxValue = 59
+                            value = selectedSeconds
+                            setOnValueChangedListener { _, _, newVal ->
+                                selectedSeconds = newVal
+                            }
+                        }
+                    })
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Sec")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { showTimePicker = false },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Text("Done")
+            }
+        }
+    }
 }
+
+
 
 @Preview(showBackground = true)
 @Composable
