@@ -1,4 +1,3 @@
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -8,7 +7,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -19,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.workoutapp.NewExercise
 import com.example.workoutapp.TimerCircuit
+import com.example.workoutapp.WorkoutsEmpty
 
 @Composable
 fun Workout(navController: NavController) {
@@ -61,7 +60,7 @@ fun Workout(navController: NavController) {
                     }
                 }
 
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 Text(
                     text = "3 Circuits",
@@ -123,8 +122,20 @@ fun ExerciseItem(title: String, subtitle: String, navController: NavController) 
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "workout") {
-        composable("workout") { Workout(navController) }
+
+    val hasWorkouts = remember { mutableStateOf(false) }
+
+    NavHost(navController = navController, startDestination = "main") {
+        composable("main") {
+            if (hasWorkouts.value) {
+                Workout(navController)
+            } else {
+                WorkoutsEmpty(onAddClick = {
+                    navController.navigate("newExercise")
+                    hasWorkouts.value = true
+                })
+            }
+        }
         composable("timer") { TimerCircuit() }
         composable("newExercise") { NewExercise(navController) }
     }
