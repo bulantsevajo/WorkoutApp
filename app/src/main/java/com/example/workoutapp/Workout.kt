@@ -1,13 +1,14 @@
 package com.example.workoutapp
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
@@ -36,75 +38,97 @@ fun WorkoutScreen() {
     val draggedItemIndex = remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
 
+    // Bottom sheet state
+    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showSheet by remember { mutableStateOf(false) }
+    var indexToDelete by remember { mutableStateOf<Int?>(null) }
+
+    if (showSheet && indexToDelete != null) {
+        ModalBottomSheet(
+            onDismissRequest = { showSheet = false },
+            sheetState = bottomSheetState,
+            containerColor = Color.White
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    text = "Delete Circuit",
+                    fontSize = 18.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp)
+                        .clickable {
+                            items.removeAt(indexToDelete!!)
+                            showSheet = false
+                        }
+                )
+                Divider()
+                Text(
+                    text = "Cancel",
+                    fontSize = 18.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp)
+                        .clickable { showSheet = false }
+                )
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Workout") },
                 navigationIcon = {
-                    IconButton(onClick = { /* Handle back */ }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Default.Menu, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    TextButton(onClick = { /* Handle done */ }) {
+                    TextButton(onClick = {}) {
                         Text("Done", color = Color.Black)
                     }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { /* Handle add */ },
-                containerColor = Color.Black,
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add")
+            FloatingActionButton(onClick = {}, containerColor = Color.Black) {
+                Icon(Icons.Default.Menu, contentDescription = "Add", tint = Color.White)
             }
         }
-    ) { paddingValues ->
+    ) { padding ->
         Column(
-            modifier = Modifier
+            Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(padding)
                 .padding(16.dp)
         ) {
             TextField(
-                value = "Бег",
-                onValueChange = { /* Handle text change */ },
-                modifier = Modifier.fillMaxWidth(),
+                value = "Бег", onValueChange = {}, modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.textFieldColors(
                     disabledIndicatorColor = Color.Transparent,
                     focusedIndicatorColor = Color.Gray,
                     unfocusedIndicatorColor = Color.LightGray
                 )
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
             LazyColumn {
-                itemsIndexed(items) { index, (title, subtitle) ->
+                itemsIndexed(items, key = { _, item -> item.first }) { index, (title, subtitle) ->
+                    var offsetX by remember { mutableStateOf(0f) }
                     val isDragging = draggedItemIndex.value == index
 
-                    Card(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .graphicsLayer {
-                                alpha = if (isDragging) 0.5f else 1f
-                            }
+                            .height(IntrinsicSize.Min)
                             .pointerInput(Unit) {
                                 detectDragGesturesAfterLongPress(
-                                    onDragStart = {
-                                        draggedItemIndex.value = index
-                                    },
-                                    onDragEnd = {
-                                        draggedItemIndex.value = null
-                                    },
-                                    onDragCancel = {
-                                        draggedItemIndex.value = null
-                                    },
+                                    onDragStart = { draggedItemIndex.value = index },
+                                    onDragEnd = { draggedItemIndex.value = null },
+                                    onDragCancel = { draggedItemIndex.value = null },
                                     onDrag = { _, dragAmount ->
-                                        val targetIndex = (index + dragAmount.y / 100).toInt().coerceIn(0, items.lastIndex)
+                                        val targetIndex = (index + (dragAmount.y / 100).toInt())
+                                            .coerceIn(0, items.lastIndex)
                                         if (targetIndex != index) {
                                             scope.launch {
                                                 val movedItem = items.removeAt(index)
@@ -116,27 +140,69 @@ fun WorkoutScreen() {
                                 )
                             }
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = "Drag handle",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(text = title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                Text(text = subtitle, color = androidx.compose.ui.graphics.Color.Gray, fontSize = 14.sp)
+                        // Delete icon background
+                        if (offsetX < -100f) {
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .background(Color(0xFFDDDDDD)),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        indexToDelete = index
+                                        showSheet = true
+                                    },
+                                    modifier = Modifier.padding(end = 16.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete"
+                                    )
+                                }
                             }
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Go to",
-                                modifier = Modifier.size(24.dp)
-                            )
+                        }
+
+                        // Foreground draggable card
+                        Card(
+                            modifier = Modifier
+                                .offset { IntOffset(offsetX.toInt(), 0) }
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .graphicsLayer { alpha = if (isDragging) 0.5f else 1f }
+                                .pointerInput(Unit) {
+                                    detectDragGestures(
+                                        onDragEnd = { offsetX = 0f },
+                                        onDragCancel = { offsetX = 0f },
+                                        onDrag = { change, dragAmount ->
+                                            change.consume()
+                                            offsetX = (offsetX + dragAmount.x).coerceAtMost(0f)
+                                        }
+                                    )
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Menu,
+                                    contentDescription = "Drag",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                    Text(subtitle, fontSize = 14.sp, color = Color.Gray)
+                                }
+                                Icon(
+                                    Icons.Default.Menu,
+                                    contentDescription = "Go",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -147,6 +213,6 @@ fun WorkoutScreen() {
 
 @Preview(showBackground = true)
 @Composable
-fun WorkoutScreenPreview() {
+fun PreviewWorkout() {
     WorkoutScreen()
 }
