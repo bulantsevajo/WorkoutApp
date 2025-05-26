@@ -2,8 +2,7 @@ package com.example.workoutapp
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -12,17 +11,16 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.*
 import kotlinx.coroutines.launch
+import kotlin.math.abs
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,15 +36,14 @@ fun WorkoutScreen() {
     val draggedItemIndex = remember { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
 
-    // Bottom sheet state
-    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showSheet by remember { mutableStateOf(false) }
     var indexToDelete by remember { mutableStateOf<Int?>(null) }
 
     if (showSheet && indexToDelete != null) {
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
-            sheetState = bottomSheetState,
+            sheetState = sheetState,
             containerColor = Color.White
         ) {
             Column(Modifier.padding(16.dp)) {
@@ -116,54 +113,30 @@ fun WorkoutScreen() {
                 itemsIndexed(items, key = { _, item -> item.first }) { index, (title, subtitle) ->
                     var offsetX by remember { mutableStateOf(0f) }
                     val isDragging = draggedItemIndex.value == index
+                    val swipeThreshold = 100f
 
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(IntrinsicSize.Min)
-                            .pointerInput(Unit) {
-                                detectDragGesturesAfterLongPress(
-                                    onDragStart = { draggedItemIndex.value = index },
-                                    onDragEnd = { draggedItemIndex.value = null },
-                                    onDragCancel = { draggedItemIndex.value = null },
-                                    onDrag = { _, dragAmount ->
-                                        val targetIndex = (index + (dragAmount.y / 100).toInt())
-                                            .coerceIn(0, items.lastIndex)
-                                        if (targetIndex != index) {
-                                            scope.launch {
-                                                val movedItem = items.removeAt(index)
-                                                items.add(targetIndex, movedItem)
-                                                draggedItemIndex.value = targetIndex
-                                            }
-                                        }
-                                    }
-                                )
-                            }
                     ) {
                         // Delete icon background
-                        if (offsetX < -100f) {
+                        if (offsetX < -40f) {
                             Box(
                                 modifier = Modifier
                                     .matchParentSize()
-                                    .background(Color(0xFFDDDDDD)),
+                                    .background(Color(0xFFF5F5F5)),
                                 contentAlignment = Alignment.CenterEnd
                             ) {
-                                IconButton(
-                                    onClick = {
-                                        indexToDelete = index
-                                        showSheet = true
-                                    },
-                                    modifier = Modifier.padding(end = 16.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Delete"
-                                    )
-                                }
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete",
+                                    modifier = Modifier.padding(end = 16.dp),
+                                    tint = Color.Black
+                                )
                             }
                         }
 
-                        // Foreground draggable card
                         Card(
                             modifier = Modifier
                                 .offset { IntOffset(offsetX.toInt(), 0) }
@@ -172,11 +145,37 @@ fun WorkoutScreen() {
                                 .graphicsLayer { alpha = if (isDragging) 0.5f else 1f }
                                 .pointerInput(Unit) {
                                     detectDragGestures(
-                                        onDragEnd = { offsetX = 0f },
-                                        onDragCancel = { offsetX = 0f },
+                                        onDragEnd = {
+                                            if (offsetX < -swipeThreshold) {
+                                                indexToDelete = index
+                                                showSheet = true
+                                            }
+                                            offsetX = 0f
+                                        },
+                                        onDragCancel = {
+                                            offsetX = 0f
+                                        },
                                         onDrag = { change, dragAmount ->
                                             change.consume()
                                             offsetX = (offsetX + dragAmount.x).coerceAtMost(0f)
+                                        }
+                                    )
+                                }
+                                .pointerInput(Unit) {
+                                    detectDragGesturesAfterLongPress(
+                                        onDragStart = { draggedItemIndex.value = index },
+                                        onDragEnd = { draggedItemIndex.value = null },
+                                        onDragCancel = { draggedItemIndex.value = null },
+                                        onDrag = { _, dragAmount ->
+                                            val targetIndex = (index + (dragAmount.y / 100).toInt())
+                                                .coerceIn(0, items.lastIndex)
+                                            if (targetIndex != index) {
+                                                scope.launch {
+                                                    val movedItem = items.removeAt(index)
+                                                    items.add(targetIndex, movedItem)
+                                                    draggedItemIndex.value = targetIndex
+                                                }
+                                            }
                                         }
                                     )
                                 }
