@@ -1,4 +1,5 @@
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -92,12 +93,21 @@ fun Workout(navController: NavController) {
 
                         Spacer(Modifier.height(8.dp))
 
+                        Divider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            thickness = 1.dp,
+                            color = Color.LightGray
+                        )
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
-                                    workouts[index] = workout.copy(expanded = !workout.expanded)
-                                },
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) { workouts[index] = workout.copy(expanded = !workout.expanded) },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
