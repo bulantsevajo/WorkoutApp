@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -131,10 +132,14 @@ fun Workout(navController: NavController) {
                 shape = CircleShape,
                 containerColor = Color.Black,
                 modifier = Modifier
-                    .padding(16.dp)
-                    .size(64.dp)
+                    .size(72.dp), // крупный размер
             ) {
-                Text("+", color = Color.White, fontSize = 28.sp)
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add",
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp) // крупный плюс
+                )
             }
         }
     }
