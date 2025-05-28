@@ -25,6 +25,8 @@ import com.example.workoutapp.TimerCircuit
 import com.example.workoutapp.WorkoutsEmpty
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import com.example.workoutapp.StopwatchCircuit
+import com.example.workoutapp.WorkoutScreen
 
 data class WorkoutData(
     val title: String,
@@ -51,6 +53,7 @@ fun Workout(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(WindowInsets.safeDrawing.asPaddingValues())
             .padding(16.dp)
     ) {
         Text(
@@ -138,7 +141,7 @@ fun Workout(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         ) {
             FloatingActionButton(
-                onClick = { navController.navigate("newExercise") },
+                onClick = { navController.navigate("workout") },
                 shape = CircleShape,
                 containerColor = Color.Black,
                 modifier = Modifier
@@ -170,7 +173,7 @@ fun ExerciseItem(title: String, subtitle: String, navController: NavController) 
             Text(text = subtitle, fontSize = 14.sp, color = Color.Gray)
         }
         Button(
-            onClick = { navController.navigate("timer") },
+            onClick = { navController.navigate("stopwatch") },
             shape = CircleShape,
             colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
         ) {
@@ -191,13 +194,16 @@ fun MainScreen() {
                 Workout(navController)
             } else {
                 WorkoutsEmpty(onAddClick = {
-                    navController.navigate("newExercise")
+                    navController.navigate("workout")
                     hasWorkouts.value = true
                 })
             }
         }
-        composable("timer") { TimerCircuit() }
+        composable("timer") { TimerCircuit(navController) }
         composable("newExercise") { NewExercise(navController) }
+        composable("stopwatch") { StopwatchCircuit() }
+        composable("workout") { WorkoutScreen(navController) }
+        composable("workouts") { MainScreen() }
     }
 }
 
