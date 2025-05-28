@@ -1,7 +1,10 @@
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,10 +21,30 @@ import androidx.navigation.compose.rememberNavController
 import com.example.workoutapp.NewExercise
 import com.example.workoutapp.TimerCircuit
 import com.example.workoutapp.WorkoutsEmpty
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+
+data class WorkoutData(
+    val title: String,
+    val circuits: List<Pair<String, String>>,
+    var expanded: Boolean = false
+)
+
 
 @Composable
 fun Workout(navController: NavController) {
-    var expanded by remember { mutableStateOf(false) }
+    val workouts = remember {
+        mutableStateListOf(
+            WorkoutData(
+                title = "Бег",
+                circuits = listOf(
+                    "Разминка, 10:00" to "1 Exercise, No Repeats",
+                    "Интервалы, 40:00" to "2 Exercises, 10 Repeats",
+                    "Cool Down, 10:00" to "1 Exercise, No Repeats"
+                )
+            )
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -35,53 +58,73 @@ fun Workout(navController: NavController) {
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(4.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Бег",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Button(
-                        onClick = { navController.navigate("timer") },
-                        shape = CircleShape,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-                    ) {
-                        Text(text = "Start", color = Color.White)
-                    }
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                Text(
-                    text = "3 Circuits",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+        LazyColumn(modifier = Modifier.weight(1f)) {
+            itemsIndexed(workouts) { index, workout ->
+                Card(
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
-                        .clickable { expanded = !expanded }
-                        .padding(bottom = 8.dp)
-                )
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F4F4)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = workout.title,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Button(
+                                onClick = { navController.navigate("timer") },
+                                shape = CircleShape,
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                            ) {
+                                Text("Start", color = Color.White)
+                            }
+                        }
 
-                if (expanded) {
-                    ExerciseItem("Разминка, 10:00", "1 Exercise, No Repeats", navController)
-                    ExerciseItem("Интервалы, 40:00", "2 Exercises, 10 Repeats", navController)
-                    ExerciseItem("Cool Down, 10:00", "1 Exercise, No Repeats", navController)
+                        Spacer(Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    workouts[index] = workout.copy(expanded = !workout.expanded)
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "${workout.circuits.size} Circuits",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                imageVector = if (workout.expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = null
+                            )
+                        }
+
+                        if (workout.expanded) {
+                            Spacer(Modifier.height(8.dp))
+                            workout.circuits.forEach { (title, subtitle) ->
+                                ExerciseItem(title, subtitle, navController)
+                            }
+                        }
+                    }
                 }
             }
         }
 
         Box(
             contentAlignment = Alignment.BottomEnd,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxWidth()
         ) {
             FloatingActionButton(
                 onClick = { navController.navigate("newExercise") },
@@ -89,13 +132,15 @@ fun Workout(navController: NavController) {
                 containerColor = Color.Black,
                 modifier = Modifier
                     .padding(16.dp)
-                    .size(56.dp)
+                    .size(64.dp)
             ) {
-                Text(text = "+", color = Color.White, fontSize = 24.sp)
+                Text("+", color = Color.White, fontSize = 28.sp)
             }
         }
     }
 }
+
+
 
 @Composable
 fun ExerciseItem(title: String, subtitle: String, navController: NavController) {
@@ -123,7 +168,7 @@ fun ExerciseItem(title: String, subtitle: String, navController: NavController) 
 fun MainScreen() {
     val navController = rememberNavController()
 
-    val hasWorkouts = remember { mutableStateOf(false) }
+    val hasWorkouts = remember { mutableStateOf(true) }
 
     NavHost(navController = navController, startDestination = "main") {
         composable("main") {
