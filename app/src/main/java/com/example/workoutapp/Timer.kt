@@ -13,12 +13,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
 
 @Composable
-fun TimerCircuit() {
+fun TimerCircuit(navController: NavController) {
     var timeLeft by remember { mutableStateOf(18) }
     var progress by remember { mutableStateOf(1f) }
+    var isPaused by remember { mutableStateOf(false) }
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = tween(durationMillis = 1000, easing = LinearEasing)
@@ -35,6 +38,7 @@ fun TimerCircuit() {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(WindowInsets.safeDrawing.asPaddingValues())
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
@@ -105,14 +109,38 @@ fun TimerCircuit() {
         }
 
         // Pause Button
-        Button(
-            onClick = { /*TODO*/ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-        ) {
-            Text(text = "PAUSE", color = Color.White, fontWeight = FontWeight.Bold)
+        if (!isPaused) {
+            Button(
+                onClick = { isPaused = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+            ) {
+                Text("PAUSE", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+        } else {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = { isPaused = false },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .padding(bottom = 8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                ) {
+                    Text("RESUME", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+                Button(
+                    onClick = { navController?.navigate("main") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                ) {
+                    Text("EXIT", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }
@@ -120,5 +148,5 @@ fun TimerCircuit() {
 @Preview(showBackground = true)
 @Composable
 fun TimerCircuitPreview() {
-    TimerCircuit()
+    TimerCircuit(navController = rememberNavController())
 }
