@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -24,10 +25,11 @@ import androidx.compose.ui.unit.*
 import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkoutScreen() {
+fun WorkoutScreen(navController: NavController) {
     val items = remember {
         mutableStateListOf(
             "Разминка, 10:00" to "1 Exercise, No Repeats",
@@ -84,15 +86,24 @@ fun WorkoutScreen() {
                     }
                 },
                 actions = {
-                    TextButton(onClick = {}) {
+                    TextButton(onClick = {navController.navigate("workouts")}) {
                         Text("Done", color = Color.Black)
                     }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {}, containerColor = Color.Black) {
-                Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+            FloatingActionButton(onClick = { navController.navigate("newExercise") },
+                shape = CircleShape,
+                containerColor = Color.Black,
+                modifier = Modifier
+                    .size(72.dp),) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add",
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp) // крупный плюс
+                )
             }
         }
     ) { padding ->
@@ -228,5 +239,7 @@ fun WorkoutScreen() {
 @Preview(showBackground = true)
 @Composable
 fun PreviewWorkout() {
-    WorkoutScreen()
+    WorkoutScreen(
+        navController = TODO()
+    )
 }
