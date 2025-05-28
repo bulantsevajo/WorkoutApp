@@ -6,9 +6,13 @@ import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -18,7 +22,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.tooling.preview.Preview
 
@@ -29,7 +32,7 @@ fun WorkoutScreen() {
         mutableStateListOf(
             "Разминка, 10:00" to "1 Exercise, No Repeats",
             "Интервалы, 40:00" to "2 Exercises, 10 Repeats",
-            "Заминка, 10:00" to "1 Exercise, No Repeats"
+            "Cool Down, 10:00" to "1 Exercise, No Repeats"
         )
     }
 
@@ -89,7 +92,7 @@ fun WorkoutScreen() {
         },
         floatingActionButton = {
             FloatingActionButton(onClick = {}, containerColor = Color.Black) {
-                Icon(Icons.Default.Menu, contentDescription = "Add", tint = Color.White)
+                Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
             }
         }
     ) { padding ->
@@ -99,14 +102,22 @@ fun WorkoutScreen() {
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            TextField(
-                value = "Бег", onValueChange = {}, modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.textFieldColors(
-                    disabledIndicatorColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Gray,
-                    unfocusedIndicatorColor = Color.LightGray
+            var exerciseName by remember { mutableStateOf("") }
+
+            OutlinedTextField(
+                value = exerciseName,
+                onValueChange = { exerciseName = it },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                placeholder = { Text("Exercise name") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Gray,
+                    unfocusedBorderColor = Color.LightGray,
+                    disabledBorderColor = Color.Transparent
                 )
             )
+
             Spacer(Modifier.height(16.dp))
 
             LazyColumn {
@@ -120,24 +131,28 @@ fun WorkoutScreen() {
                             .fillMaxWidth()
                             .height(IntrinsicSize.Min)
                     ) {
-                        // Delete icon background
-                        if (offsetX < -40f) {
-                            Box(
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(Color(0xFFF5F5F5)),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete",
                                 modifier = Modifier
-                                    .matchParentSize()
-                                    .background(Color(0xFFF5F5F5)),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete",
-                                    modifier = Modifier.padding(end = 16.dp),
-                                    tint = Color.Black
-                                )
-                            }
+                                    .padding(end = 24.dp)
+                                    .size(24.dp)
+                                    .clickable {
+                                        indexToDelete = index
+                                        showSheet = true
+                                    },
+                                tint = Color.Black
+                            )
                         }
 
                         Card(
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .offset { IntOffset(offsetX.toInt(), 0) }
                                 .fillMaxWidth()
@@ -157,7 +172,7 @@ fun WorkoutScreen() {
                                         },
                                         onDrag = { change, dragAmount ->
                                             change.consume()
-                                            offsetX = (offsetX + dragAmount.x).coerceAtMost(0f)
+                                            offsetX = (offsetX + dragAmount.x).coerceIn(-300f, 0f)
                                         }
                                     )
                                 }
@@ -197,8 +212,8 @@ fun WorkoutScreen() {
                                     Text(subtitle, fontSize = 14.sp, color = Color.Gray)
                                 }
                                 Icon(
-                                    Icons.Default.Menu,
-                                    contentDescription = "Go",
+                                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = "Details",
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
